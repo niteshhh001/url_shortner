@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("URL Shortener API is running 🚀");
+  res.send("URL Shortener API is running ");
 });
 
 app.use("/", urlRoutes);
