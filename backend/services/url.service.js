@@ -1,25 +1,37 @@
-const store = require("../data/store");
+const Url = require("../models/Url");
 const generateCode = require("../utils/generateCode");
+const validateUrl = require("../utils/validator");
 
-function createShortUrl(longUrl) {
-  const shortCode = generateCode(6);
+async function createShortUrl(longUrl) {
+  // Validation layer
+  await validateUrl(longUrl);
 
-  store.set(shortCode, {
+  // Generate unique short code
+  let shortCode;
+  let exists = true;
+
+  while (exists) {
+    shortCode = generateCode(6);
+    exists = await Url.findOne({ shortCode });
+  }
+
+  const newUrl = await Url.create({
     longUrl,
-    createdAt: new Date(),
-    clicks: 0,
+    shortCode,
   });
 
-  return shortCode;
+  return newUrl.shortCode;
 }
 
-function getLongUrl(shortCode) {
-  const data = store.get(shortCode);
+async function getLongUrl(shortCode) {
+  const url = await Url.findOne({ shortCode });
 
-  if (!data) return null;
+  if (!url) return null;
 
-  data.clicks += 1;
-  return data.longUrl;
+  url.clicks += 1;
+  await url.save();
+
+  return url.longUrl;
 }
 
 module.exports = {
