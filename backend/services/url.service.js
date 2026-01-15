@@ -1,6 +1,6 @@
 const Url = require("../models/Url");
 const generateCode = require("../utils/generateCode");
-const validateUrl = require("../utils/validators");
+const validateUrl = require("../utils/validator");
 const DEFAULT_EXPIRY_DAYS = 30;
 
 async function createShortUrl(longUrl, customAlias, expiresAt) {
