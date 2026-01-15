@@ -39,7 +39,7 @@ exports.shortenUrl = async (req, res) => {
 exports.redirectUrl = async (req, res) => {
   const { shortCode } = req.params;
 
-  const result = await urlService.getLongUrl(shortCode);
+  const result = await urlService.getLongUrl(shortCode,req);
 
   if (result?.error === "NOT_FOUND") {
     return res.status(404).json({ error: "Short URL not found" });
@@ -51,3 +51,62 @@ exports.redirectUrl = async (req, res) => {
 
   res.redirect(result.longUrl);
 };
+
+exports.getMyUrls = async (req, res) => {
+  const urls = await Url.find({ userId: req.user.id })
+    .sort({ createdAt: -1 });
+
+  res.json(urls);
+};
+
+exports.deleteUrl = async (req, res) => {
+  const url = await Url.findOne({ _id: req.params.id });
+
+  if (!url) return res.status(404).json({ error: "Not found" });
+
+  if (url.userId.toString() !== req.user.id)
+    return res.status(403).json({ error: "Forbidden" });
+
+  await url.deleteOne();
+  res.json({ message: "Deleted successfully" });
+};
+
+exports.updateExpiry = async (req, res) => {
+  const { expiresAt } = req.body;
+
+  const url = await Url.findOne({ _id: req.params.id });
+
+  if (!url) return res.status(404).json({ error: "Not found" });
+
+  if (url.userId.toString() !== req.user.id)
+    return res.status(403).json({ error: "Forbidden" });
+
+  url.expiresAt = new Date(expiresAt);
+  await url.save();
+
+  res.json({ message: "Expiry updated" });
+};
+
+exports.getAnalytics = async (req, res) => {
+  const url = await Url.findOne({ _id: req.params.id });
+
+  if (!url) return res.status(404).json({ error: "Not found" });
+
+  if (url.userId.toString() !== req.user.id)
+    return res.status(403).json({ error: "Forbidden" });
+
+  // clicks per day
+  const stats = {};
+
+  url.visits.forEach(v => {
+    const day = v.timestamp.toISOString().split("T")[0];
+    stats[day] = (stats[day] || 0) + 1;
+  });
+
+  res.json({
+    totalClicks: url.clicks,
+    byDate: stats,
+    recentVisits: url.visits.slice(-20),
+  });
+};
+

@@ -2,6 +2,7 @@ const Url = require("../models/Url");
 const generateCode = require("../utils/generateCode");
 const validateUrl = require("../utils/validator");
 const DEFAULT_EXPIRY_DAYS = 30;
+const geoip = require("geoip-lite");
 
 async function createShortUrl(longUrl, customAlias, expiresAt,userId,ip) {
   await validateUrl(longUrl);
@@ -38,21 +39,36 @@ async function createShortUrl(longUrl, customAlias, expiresAt,userId,ip) {
   return newUrl.shortCode;
 }
 
-async function getLongUrl(shortCode) {
+async function getLongUrl(shortCode, req) {
   const url = await Url.findOne({ shortCode });
 
   if (!url) return { error: "NOT_FOUND" };
 
-  // Expiry check
   if (url.expiresAt && url.expiresAt < new Date()) {
     return { error: "EXPIRED" };
   }
 
+  const ip = req.ip;
+  const userAgent = req.headers["user-agent"];
+
+  const device = /mobile/i.test(userAgent) ? "Mobile" : "Desktop";
+
+  // Example: country stub (we'll improve next)
+  const geo = geoip.lookup(ip);
+  const country = geo ? geo.country : "Unknown";
   url.clicks += 1;
+  url.visits.push({
+    ip,
+    device,
+    country,
+    userAgent,
+  });
+
   await url.save();
 
   return { longUrl: url.longUrl };
 }
+
 
 module.exports = {
   createShortUrl,
