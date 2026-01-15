@@ -3,7 +3,7 @@ const generateCode = require("../utils/generateCode");
 const validateUrl = require("../utils/validator");
 const DEFAULT_EXPIRY_DAYS = 30;
 
-async function createShortUrl(longUrl, customAlias, expiresAt) {
+async function createShortUrl(longUrl, customAlias, expiresAt,userId,ip) {
   await validateUrl(longUrl);
 
   let shortCode;
@@ -31,6 +31,8 @@ async function createShortUrl(longUrl, customAlias, expiresAt) {
     longUrl,
     shortCode,
     expiresAt: expiryDate,
+    userId,
+    createdByIp: ip,
   });
 
   return newUrl.shortCode;

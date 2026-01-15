@@ -22,6 +22,16 @@ const urlSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+ userId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  default: null, // anonymous users have null
+},
+
+createdByIp: {
+  type: String,
+  required: true,
+},
 });
 
 module.exports = mongoose.model("Url", urlSchema);
